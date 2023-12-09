@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"irbis_api/internal/models"
 	"log"
+	"time"
 
 	"github.com/amironov73/GoIrbis/src/irbis"
 )
@@ -41,8 +42,38 @@ func UserProfile(login, password, user_id, last_name string) (string, error) {
 }
 
 func CreateVirUser(v *models.VirtualUserData) (string, error) {
-	log.Println("Имя:", v.Name, "Фамилия:", v.Family, "Отчество:", v.Surname, "Дата рождения:", v.Birth, "Телефон:", v.Phone)
-	return "", nil
+	connection := irbis.NewConnection()
+	connection.Host = "irbis"
+	connection.Username = "amogus"
+	connection.Password = "test14"
+	if !connection.Connect() {
+		println("Не удалось подключиться")
+		return "", fmt.Errorf("Can't connect...")
+	}
+
+	defer connection.Disconnect()
+	connection.Database = "RDRV"
+	now := time.Now()
+	fDate := now.Format("02.01.2006")
+	fTime := now.Format("15:04")
+
+	record := irbis.NewMarcRecord()
+	record.Add(10, v.Family)
+	record.Add(11, v.Name)
+	record.Add(12, v.Surname)
+	record.Add(21, v.Birth)
+	record.Add(23, v.Gender)
+	record.Add(17, v.Phone)
+	record.Add(51, "").
+		Add('6', fDate+","+fTime)
+	record.Add(33, "Почтовый индекс: "+v.Postcode+", адрес:"+v.Country+","+v.City+", ул."+v.Street+", д."+v.House+",кв."+v.Apartment)
+
+	record.Add(920, "RDR")
+	connection.WriteRecord(record)
+
+	log.Println(record)
+
+	return fmt.Sprintf("%s", record), nil
 }
 
 func CoworkerProfile(clogin, cpassword string) (string, string, error) {
