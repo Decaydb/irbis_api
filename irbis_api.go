@@ -8,6 +8,7 @@ import (
 func main() {
 	http.HandleFunc("/api/v1/get.user", GetUser)
 	http.HandleFunc("/api/v1/worker.login", WorkerLogin)
+	http.HandleFunc("/api/v2/virtual.user", CreateVirtual)
 	//mux := http.NewServeMux()
 	//mux.HandleFunc("/api/v1/get.user", GetUser)
 
