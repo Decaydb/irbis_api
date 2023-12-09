@@ -1,0 +1,6 @@
+{
+    "port": "postgres",
+    "db_pass": "579e4t6y7i",
+    "db_name": "fighters",
+	"max_conn": 5
+}

@@ -1,0 +1,4 @@
+github.com/amironov73/GoIrbis v0.0.0-20210305024020-6df75d7422b1 h1:EakVYsdLaXjn3Ijck3c+9vbnH8NCt5ntLQ3l1NnrgHM=
+github.com/amironov73/GoIrbis v0.0.0-20210305024020-6df75d7422b1/go.mod h1:aXuePCm9BinAOtzfs/cz/MdwZBfngjvCb6oGsL6LiBE=
+github.com/gorilla/mux v1.8.1 h1:TuBL49tXwgrFYWhqrNgrUNEY92u81SPhu7sTdzQEiWY=
+github.com/gorilla/mux v1.8.1/go.mod h1:AKf9I4AEqPTmMytcMc0KkNouC66V3BtZ4qD5fmWSiMQ=
