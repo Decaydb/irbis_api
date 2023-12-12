@@ -101,3 +101,42 @@ func CoworkerProfile(clogin, cpassword string) (string, string, error) {
 	log.Println(dbn)
 	return server_ver, dbaccess, nil
 }
+
+func IrbStatus(login, password string) (int, int, int, error) {
+	con := irbis.NewConnection()
+	con.Host = "irbis"
+	con.Port = 6666
+	con.Workstation = "C"
+	con.Username = login
+	con.Password = password
+
+	if !con.Connect() {
+		log.Println("Не удалось подключиться и получить данные от сервера")
+		return 0, 0, 0, fmt.Errorf("Не удалось подключиться и получить данные от сервера")
+	}
+	defer con.Disconnect()
+	res := con.GetServerStat()
+	connected := res.ClientCount
+	comm := res.TotalCommandCount
+	run := len(res.RunningClients)
+	return connected, run, comm, nil
+}
+
+func Reload(login, password string) error {
+	con := irbis.NewConnection()
+	con.Host = "irbis"
+	con.Port = 6666
+	con.Workstation = "C"
+	con.Username = login
+	con.Password = password
+	if !con.Connect() {
+		log.Println("Не удалось перезапустить сервер")
+		return fmt.Errorf("Не удалось подключиться к сереверу для перезапуска")
+	}
+	var response bool
+	response = con.RestartServer()
+	if response != true {
+		return fmt.Errorf("Не удалось перезапустить сервер")
+	}
+	return nil
+}

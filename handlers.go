@@ -149,3 +149,65 @@ func CreateVirtual(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+func ServerStatus(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	login := q.Get("login")
+	password := q.Get("password")
+	if len(login) > 1 && len(password) > 1 {
+
+		conn, run, comm, err := irbis_hand.IrbStatus(login, password)
+		if err == nil {
+			group := models.ServStatus{
+				RegClients: conn,
+				RunNow:     run,
+				TotalComm:  comm,
+			}
+			b, _ := json.Marshal(group)
+			fmt.Fprint(w, string(b))
+
+		} else {
+			group := models.ErrorMessage{
+				Error: 111,
+			}
+			b, _ := json.Marshal(group)
+			fmt.Fprint(w, string(b))
+		}
+	} else {
+		group := models.ErrorMessage{
+			Error: 1,
+		}
+		b, _ := json.Marshal(group)
+		fmt.Fprint(w, string(b))
+	}
+}
+
+func ReloadIrbis(w http.ResponseWriter, r *http.Request) {
+
+	q := r.URL.Query()
+	login := q.Get("login")
+	password := q.Get("password")
+	if len(login) <= 1 && len(password) <= 1 {
+		group := models.ErrorMessage{
+			Error: 1,
+		}
+		b, _ := json.Marshal(group)
+		fmt.Fprint(w, string(b))
+	} else {
+		err := irbis_hand.Reload(login, password)
+		if err == nil {
+			group := models.ErrorMessage{
+				Error: 0,
+			}
+			b, _ := json.Marshal(group)
+			fmt.Fprint(w, string(b))
+		} else {
+			group := models.ErrorMessage{
+				Error: 100,
+			}
+			b, _ := json.Marshal(group)
+			fmt.Fprint(w, string(b))
+		}
+	}
+
+}

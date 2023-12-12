@@ -24,3 +24,9 @@ type ConnectionData struct {
 	Version string
 	Acces   string
 }
+
+type ServStatus struct {
+	RegClients int
+	RunNow     int
+	TotalComm  int
+}
