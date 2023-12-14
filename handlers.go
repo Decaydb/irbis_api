@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"irbis_api/core/irbis_hand"
+	irb "irbis_api/core/irbis_hand"
 	"irbis_api/core/validation"
 	"irbis_api/internal/models"
 	"log"
@@ -36,9 +36,10 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if errType[0] == 0 && errType[1] == 0 {
-		description, errd = irbis_hand.UserProfile(login, password, id, lastName)
+		description, errd = irb.UserProfile(login, password, id, lastName)
 		if errd != nil {
 			errType[2] = 1
+			log.Println(errd)
 		}
 	}
 
@@ -81,7 +82,7 @@ func WorkerLogin(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	clogin := q.Get("login")
 	cpassword := q.Get("password")
-	ver, dbacces, err := irbis_hand.CoworkerProfile(clogin, cpassword)
+	ver, dbacces, err := irb.CoworkerProfile(clogin, cpassword)
 	if err != nil {
 		group := models.ErrorMessage{
 			Error: 2,
@@ -127,7 +128,7 @@ func CreateVirtual(w http.ResponseWriter, r *http.Request) {
 			virtual.Name = e.Replace(virtual.Name)
 			virtual.Surname = e.Replace(virtual.Surname)
 			virtual.Family = e.Replace(virtual.Family)
-			_, err := irbis_hand.CreateVirUser(&virtual)
+			_, err := irb.CreateVirUser(&virtual)
 			if err != nil {
 				log.Println("Ошибка регистрации пользователя", virtual.Name)
 			}
@@ -156,7 +157,7 @@ func ServerStatus(w http.ResponseWriter, r *http.Request) {
 	password := q.Get("password")
 	if len(login) > 1 && len(password) > 1 {
 
-		conn, run, comm, err := irbis_hand.IrbStatus(login, password)
+		conn, run, comm, err := irb.IrbStatus(login, password)
 		if err == nil {
 			group := models.ServStatus{
 				RegClients: conn,
@@ -194,7 +195,7 @@ func ReloadIrbis(w http.ResponseWriter, r *http.Request) {
 		b, _ := json.Marshal(group)
 		fmt.Fprint(w, string(b))
 	} else {
-		err := irbis_hand.Reload(login, password)
+		err := irb.Reload(login, password)
 		if err == nil {
 			group := models.ErrorMessage{
 				Error: 0,
@@ -208,6 +209,36 @@ func ReloadIrbis(w http.ResponseWriter, r *http.Request) {
 			b, _ := json.Marshal(group)
 			fmt.Fprint(w, string(b))
 		}
+
 	}
 
+}
+
+func OnHands(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	login := q.Get("login")
+	password := q.Get("password")
+	id := q.Get("id")
+	lastName := q.Get("last_name")
+	if len(password) > 1 || len(login) > 1 {
+		if len(id) > 4 && len(lastName) > 2 {
+			resp, err := irb.UserBooksOnHands(login, password, id, lastName)
+			if err != nil {
+				group := models.ErrorMessage{
+					Error: 4,
+				}
+				b, _ := json.Marshal(group)
+				fmt.Fprint(w, string(b))
+			} else {
+				fmt.Fprint(w, resp)
+			}
+
+		} else {
+			group := models.ErrorMessage{
+				Error: 1,
+			}
+			b, _ := json.Marshal(group)
+			fmt.Fprint(w, string(b))
+		}
+	}
 }

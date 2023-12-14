@@ -25,14 +25,14 @@ func PhoneValidation(phone string) (string, error) {
 	if valid != true {
 		return "", fmt.Errorf("Not a phone number")
 	}
-	p := strings.NewReplacer(" ", ".", "\n", "\r")
+	p := strings.NewReplacer(" ", "", ".", "", "\n", "", "\r", "")
 	phone = p.Replace(phone)
 
 	return phone, nil
 }
 
 func TextEditor(target string) (editResult string) {
-	e := strings.NewReplacer(" ", ".", ",", "\n")
+	e := strings.NewReplacer(" ", "", ".", "", ",", "", "\n", "")
 	editResult = e.Replace(target)
 	return
 }

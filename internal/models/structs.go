@@ -30,3 +30,27 @@ type ServStatus struct {
 	RunNow     int
 	TotalComm  int
 }
+
+type User struct {
+	UserName string `json:"user_name"`
+	Category string `json:"category"`
+	RegDate  string `json:"reg_date"`
+	Books    []Book `json:"books"`
+}
+
+type Book struct {
+	Brief              string `json:"brief"`
+	DateOfIssue        string `json:"date_of_issue"`
+	ExpectedReturnDate string `json:"expected_return_date"`
+	PlaceOfIssue       string `json:"place_of_issue"`
+}
+
+type UserInfo struct {
+	UserName string `json:"user_name"`
+	Category string `json:"category"`
+	RegDate  string `json:"reg_date"`
+}
+
+type Books struct {
+	Books []string `json:"books"`
+}

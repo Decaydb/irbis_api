@@ -1,15 +1,17 @@
 package irbis_hand
 
 import (
+	"encoding/json"
 	"fmt"
 	"irbis_api/internal/models"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/amironov73/GoIrbis/src/irbis"
 )
 
-func UserProfile(login, password, user_id, last_name string) (string, error) {
+func UserBooksOnHands(login, password, user_id, last_name string) (string, error) {
 	conn := irbis.NewConnection()
 	conn.Host = "irbis"
 	conn.Port = 6666
@@ -26,7 +28,7 @@ func UserProfile(login, password, user_id, last_name string) (string, error) {
 	parameters.Expression = fmt.Sprintf(`"K=%s$" * "K=%s$"`, user_id, last_name)
 	//parameters.Format = irbis.OPTIMIZED_FORMAT
 	//Используется свой формат вывода json, получается формируется он на стороне ИРБИС.
-	parameters.Format = "@json_dolg2"
+	parameters.Format = "@rdrw_raw_dolg"
 	parameters.NumberOfRecords = 1
 	found := conn.SearchEx(parameters)
 	var first irbis.FoundLine
@@ -37,7 +39,66 @@ func UserProfile(login, password, user_id, last_name string) (string, error) {
 		first = found[0]
 		//fmt.Println("MFN:", first.Mfn, "DESCRIPTION:", first.Description)
 	}
-	return first.Description, nil
+	resp := strings.Split(first.Description, "\n")
+
+	respond := models.Books{
+		Books: resp,
+	}
+	jsonData, err := json.Marshal(respond)
+	if err != nil {
+		return "", fmt.Errorf("Ошибка упаковки json")
+	}
+	return string(jsonData), nil
+
+}
+
+func UserProfile(login, password, user_id, last_name string) (string, error) {
+	conn := irbis.NewConnection()
+	conn.Host = "irbis"
+	conn.Port = 6666
+	conn.Username = login
+	conn.Password = password
+	conn.Database = "RDR"
+	if !conn.Connect() {
+		println("Не удалось подключиться для получения данных пользователя")
+		return "", fmt.Errorf("{Error %v", "Не удалось подключиться к IRBIS")
+	}
+	defer conn.Disconnect()
+
+	found := conn.Search(fmt.Sprintf(`"K=%s$" * "K=%s$"`, user_id, last_name))
+	if len(found) == 0 {
+		return "", fmt.Errorf("Ничего не найдено")
+	}
+
+	var (
+		userName     string
+		userLastName string
+		userSurname  string
+		userCategory string
+		userReg      string
+	)
+
+	for _, mfn := range found {
+		record := conn.ReadRecord(mfn)
+		userLastName = record.FM(10)
+		userName = record.FM(11)
+		userSurname = record.FM(12)
+		userCategory = record.FSM(50, 'A')
+		userReg = record.FM(51)
+	}
+
+	usermodel := models.UserInfo{
+		UserName: fmt.Sprintf("%s.%s.%s", userName[0:2], userSurname[0:2], userLastName),
+		Category: userCategory,
+		RegDate:  fmt.Sprintf("%s.%s.%s", userReg[6:], userReg[4:6], userReg[0:4]),
+	}
+
+	jsonData, err := json.Marshal(usermodel)
+	if err != nil {
+		return "", fmt.Errorf("Ошибка упаковки json")
+	}
+
+	return string(jsonData), nil
 
 }
 
