@@ -155,18 +155,30 @@ func ServerStatus(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	login := q.Get("login")
 	password := q.Get("password")
+	detail := q.Get("detail")
 	if len(login) > 1 && len(password) > 1 {
 
-		conn, run, comm, err := irb.IrbStatus(login, password)
+		conn, run, comm, runDetail, err := irb.IrbStatus(login, password, detail)
 		if err == nil {
-			group := models.ServStatus{
-				RegClients: conn,
-				RunNow:     run,
-				TotalComm:  comm,
-			}
-			b, _ := json.Marshal(group)
-			fmt.Fprint(w, string(b))
+			if detail == "detail" {
+				group := models.ServStatusD{
+					RegClients:   conn,
+					RunNow:       run,
+					RunNowDetail: runDetail,
+					TotalComm:    comm,
+				}
+				b, _ := json.Marshal(group)
+				fmt.Fprint(w, string(b))
 
+			} else {
+				group := models.ServStatus{
+					RegClients: conn,
+					RunNow:     run,
+					TotalComm:  comm,
+				}
+				b, _ := json.Marshal(group)
+				fmt.Fprint(w, string(b))
+			}
 		} else {
 			group := models.ErrorMessage{
 				Error: 111,
@@ -223,6 +235,35 @@ func OnHands(w http.ResponseWriter, r *http.Request) {
 	if len(password) > 1 || len(login) > 1 {
 		if len(id) > 4 && len(lastName) > 2 {
 			resp, err := irb.UserBooksOnHands(login, password, id, lastName)
+			if err != nil {
+				group := models.ErrorMessage{
+					Error: 4,
+				}
+				b, _ := json.Marshal(group)
+				fmt.Fprint(w, string(b))
+			} else {
+				fmt.Fprint(w, resp)
+			}
+
+		} else {
+			group := models.ErrorMessage{
+				Error: 1,
+			}
+			b, _ := json.Marshal(group)
+			fmt.Fprint(w, string(b))
+		}
+	}
+}
+
+func OnHandsDetail(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	login := q.Get("login")
+	password := q.Get("password")
+	id := q.Get("id")
+	lastName := q.Get("last_name")
+	if len(password) > 1 || len(login) > 1 {
+		if len(id) > 4 && len(lastName) > 2 {
+			resp, err := irb.IrbBooksDetail(login, password, id, lastName)
 			if err != nil {
 				group := models.ErrorMessage{
 					Error: 4,

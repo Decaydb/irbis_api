@@ -31,6 +31,13 @@ type ServStatus struct {
 	TotalComm  int
 }
 
+type ServStatusD struct {
+	RegClients   int      `json:"reg_clients"`
+	RunNow       int      `json:"run_now"`
+	RunNowDetail []string `json:"run_now_detail"`
+	TotalComm    int      `json:"total_com"`
+}
+
 type User struct {
 	UserName string `json:"user_name"`
 	Category string `json:"category"`
@@ -53,4 +60,23 @@ type UserInfo struct {
 
 type Books struct {
 	Books []string `json:"books"`
+}
+
+type ConnParams struct {
+	Host     string
+	Port     int
+	Username string
+	Password string
+	Database string
+}
+
+type OnHands struct {
+	Book               string `json:"brief"`
+	DateOfIssue        string `json:"issue_date"`
+	ExpectedReturnDate string `json:"return_date"`
+}
+
+type MapOnHands struct {
+	Number int      `json:"num"`
+	Value  []string `json:"book_info"`
 }

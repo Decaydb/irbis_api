@@ -6,6 +6,7 @@ import (
 	"irbis_api/internal/models"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/amironov73/GoIrbis/src/irbis"
@@ -37,10 +38,12 @@ func UserBooksOnHands(login, password, user_id, last_name string) (string, error
 	} else {
 		// в found находится слайс структур FoundLine
 		first = found[0]
-		//fmt.Println("MFN:", first.Mfn, "DESCRIPTION:", first.Description)
 	}
-	resp := strings.Split(first.Description, "\n")
 
+	resp := strings.Split(first.Description, "\n")
+	if len(resp[0]) < 1 {
+		resp = []string{}
+	}
 	respond := models.Books{
 		Books: resp,
 	}
@@ -163,7 +166,7 @@ func CoworkerProfile(clogin, cpassword string) (string, string, error) {
 	return server_ver, dbaccess, nil
 }
 
-func IrbStatus(login, password string) (int, int, int, error) {
+func IrbStatus(login, password, detail string) (int, int, int, []string, error) {
 	con := irbis.NewConnection()
 	con.Host = "irbis"
 	con.Port = 6666
@@ -173,14 +176,21 @@ func IrbStatus(login, password string) (int, int, int, error) {
 
 	if !con.Connect() {
 		log.Println("Не удалось подключиться и получить данные от сервера")
-		return 0, 0, 0, fmt.Errorf("Не удалось подключиться и получить данные от сервера")
+		return 0, 0, 0, []string{}, fmt.Errorf("Не удалось подключиться и получить данные от сервера")
 	}
 	defer con.Disconnect()
 	res := con.GetServerStat()
 	connected := res.ClientCount
 	comm := res.TotalCommandCount
 	run := len(res.RunningClients)
-	return connected, run, comm, nil
+	cowSlice := []string{}
+	if detail != "" {
+		for _, coworker := range res.RunningClients {
+			cowSlice = append(cowSlice, coworker.Name)
+		}
+		return connected, run, comm, cowSlice, nil
+	}
+	return connected, run, comm, cowSlice, nil
 }
 
 func Reload(login, password string) error {
@@ -200,4 +210,119 @@ func Reload(login, password string) error {
 		return fmt.Errorf("Не удалось перезапустить сервер")
 	}
 	return nil
+}
+
+func IrbBooksDetail(login, password, user_id, last_name string) (string, error) {
+
+	conn := irbis.NewConnection()
+	conn.Host = "irbis"
+	conn.Port = 6666
+	conn.Username = login
+	conn.Password = password
+	conn.Database = "RDR"
+	if !conn.Connect() {
+		println("Не удалось подключиться для получения данных пользователя")
+		return "", fmt.Errorf("Ошибка подключения")
+	}
+	defer conn.Disconnect()
+	var (
+		brief      []string
+		issueDate  []string
+		returnDate []string
+		wg         sync.WaitGroup
+	)
+	wg.Add(3)
+	go func(co *irbis.Connection) {
+		parameters := irbis.NewSearchParameters()
+		parameters.Expression = fmt.Sprintf(`"K=%s$" * "K=%s$"`, user_id, last_name)
+		parameters.Format = "@rdrw_raw_books" //Заменить на вывод только книг!!!!
+		parameters.NumberOfRecords = 1
+		found := co.SearchEx(parameters)
+		var first irbis.FoundLine
+		if len(found) == 0 {
+			println("Не нашли")
+		} else {
+			first = found[0]
+		}
+
+		brief = strings.Split(first.Description, "\n")
+		if len(brief[0]) < 1 {
+			brief = []string{}
+		}
+		wg.Done()
+
+	}(conn)
+
+	go func(co *irbis.Connection) {
+		parameters := irbis.NewSearchParameters()
+		parameters.Expression = fmt.Sprintf(`"K=%s$" * "K=%s$"`, user_id, last_name)
+		parameters.Format = "@rdrw_raw_date_issue" //Формировать вывод ТОЛЬКО дат выдачи!!!!!
+		parameters.NumberOfRecords = 1
+		found := co.SearchEx(parameters)
+		var first irbis.FoundLine
+		if len(found) == 0 {
+			println("Не нашли")
+		} else {
+			first = found[0]
+		}
+
+		issueDate = strings.Split(first.Description, "\n")
+		if len(issueDate[0]) < 1 {
+			issueDate = []string{}
+		}
+		wg.Done()
+	}(conn)
+
+	go func(co *irbis.Connection) {
+		parameters := irbis.NewSearchParameters()
+		parameters.Expression = fmt.Sprintf(`"K=%s$" * "K=%s$"`, user_id, last_name)
+		parameters.Format = "@rdrw_raw_date_return" //Сюда ТОЛЬКО даты предполагаемого возврата книг!
+		parameters.NumberOfRecords = 1
+		found := co.SearchEx(parameters)
+		var first irbis.FoundLine
+		if len(found) == 0 {
+			println("Не нашли")
+		} else {
+			first = found[0]
+		}
+
+		returnDate = strings.Split(first.Description, "\n")
+		if len(returnDate[0]) < 1 {
+			issueDate = []string{}
+		}
+		wg.Done()
+	}(conn)
+	println(len(brief), len(issueDate), len(returnDate))
+	wg.Wait()
+
+	//ma := make(map[int]models.OnHands)
+
+	/*
+		dic:= func(books, dateOfIssue, dateOfReturn []string) map[int][3]string{
+			m := make(map[int][3]string)
+			for i:=0; i <len(books);i++{
+				m[i] = [3]string{books[i],dateOfIssue[i],dateOfReturn[i]}
+			}
+			return m
+		}
+	*/
+	dic := func() map[int]models.OnHands {
+		m := make(map[int]models.OnHands)
+		for i := 0; i < len(brief); i++ {
+			m[i] = models.OnHands{
+				Book:               brief[i],
+				DateOfIssue:        issueDate[i],
+				ExpectedReturnDate: returnDate[i],
+			}
+		}
+		return m
+	}()
+
+	jsonData, err := json.Marshal(&dic)
+	if err != nil {
+		log.Println("Ошибка упаковки карты")
+	}
+
+	return string(jsonData), nil
+
 }
