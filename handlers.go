@@ -283,3 +283,41 @@ func OnHandsDetail(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
+
+func GuidSearch(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	login := q.Get("login")
+	password := q.Get("password")
+	guid := q.Get("guid")
+
+	if len(login) < 1 && len(password) < 1 {
+		group := models.ErrorMessage{
+			Error: 1,
+		}
+		b, _ := json.Marshal(group)
+		fmt.Fprint(w, string(b))
+	} else {
+		count := strings.Count(guid, "-")
+		if count == 4 && len(guid) > 15 {
+			result, err := irb.GuidSearchRecord(login, password, guid)
+			if err != nil {
+				group := models.ErrorMessage{
+					Error: 4,
+				}
+				b, _ := json.Marshal(group)
+				fmt.Fprint(w, string(b))
+			} else {
+				fmt.Fprint(w, result)
+			}
+
+		} else {
+			group := models.ErrorMessage{
+				Error: 3,
+			}
+			b, _ := json.Marshal(group)
+			fmt.Fprint(w, string(b))
+		}
+
+	}
+
+}

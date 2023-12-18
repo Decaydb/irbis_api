@@ -80,3 +80,12 @@ type MapOnHands struct {
 	Number int      `json:"num"`
 	Value  []string `json:"book_info"`
 }
+
+type RecordDetails struct {
+	Title          string `json:"title"`
+	Author         string `json:"author"`
+	AnotherAuthors string `json:"another_authors"`
+	DocType        string `json:"doc_type"`
+	Lang           string `json:"lang"`
+	YearOfPubl     string `json:"year_of_publ"`
+}

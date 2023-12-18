@@ -13,6 +13,7 @@ func main() {
 	http.HandleFunc("/api/v1/reload.irbis", ReloadIrbis)
 	http.HandleFunc("/api/v1/on.hands", OnHands)
 	http.HandleFunc("/api/v1/on.hands.detail", OnHandsDetail)
+	http.HandleFunc("/api/v1/guid.search", GuidSearch)
 
 	log.Println("Запуск веб-сервера на http://127.0.0.1:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
