@@ -8,6 +8,7 @@ import (
 	"irbis_api/internal/models"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -301,6 +302,7 @@ func GuidSearch(w http.ResponseWriter, r *http.Request) {
 		if count == 4 && len(guid) > 15 {
 			result, err := irb.GuidSearchRecord(login, password, guid)
 			if err != nil {
+				println(err)
 				group := models.ErrorMessage{
 					Error: 4,
 				}
@@ -320,4 +322,50 @@ func GuidSearch(w http.ResponseWriter, r *http.Request) {
 
 	}
 
+}
+
+func GetRecords(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	login := q.Get("login")
+	password := q.Get("password")
+	base := q.Get("base")
+	page, err := strconv.Atoi(q.Get("page"))
+	if err != nil {
+		group := models.ErrorMessage{
+			Error: 3,
+		}
+		b, _ := json.Marshal(group)
+		fmt.Fprint(w, string(b))
+	} else {
+		totalRec, err := irb.SoloMfn("IKNBU", login, password)
+		log.Println(totalRec)
+		if err != nil {
+			log.Println("Ошибка получения максимального количества записей в базе.")
+		}
+		recPerPage := 30
+		totalPages := (totalRec + recPerPage - 1) / recPerPage
+		if page < 1 {
+			page = 1
+		} else if page > totalPages {
+			page = totalPages
+		}
+		if page == 0 {
+			page = 1
+		}
+		start := (page - 1) * recPerPage
+		end := start + recPerPage
+		log.Println(fmt.Sprintf("Максимум: %d,Всего на странице:%d,страница:%d", totalPages, recPerPage, page))
+		records, err := irb.GenRecords(base, login, password, start, end)
+		if err == nil {
+			fmt.Fprint(w, records)
+
+		} else {
+			group := models.ErrorMessage{
+				Error: 4,
+			}
+			b, _ := json.Marshal(group)
+			fmt.Fprint(w, string(b))
+		}
+
+	}
 }

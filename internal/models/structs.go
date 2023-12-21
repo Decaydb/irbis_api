@@ -89,3 +89,14 @@ type RecordDetails struct {
 	Lang           string `json:"lang"`
 	YearOfPubl     string `json:"year_of_publ"`
 }
+
+type Record struct {
+	GUID   string `json:"guid"`
+	Author string `json:"author"`
+	Title  string `json:"title"`
+	Year   string `json:"year"`
+}
+
+type Records struct {
+	Books []Record `json:"records"`
+}

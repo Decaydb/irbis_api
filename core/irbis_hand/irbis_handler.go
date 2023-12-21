@@ -333,7 +333,7 @@ func GuidSearchRecord(login, password, guid string) (string, error) {
 	conn.Port = 6666
 	conn.Username = login
 	conn.Password = password
-	conn.Database = "RDR"
+	conn.Database = "IKNBU"
 	if !conn.Connect() {
 		println("Не удалось подключиться для получения данных пользователя")
 		return "", fmt.Errorf("{Error %v", "Не удалось подключиться к IRBIS")
@@ -390,4 +390,60 @@ func GuidSearchRecord(login, password, guid string) (string, error) {
 	}
 
 	return string(jsonData), nil
+}
+
+func SoloMfn(base, login, password string) (int, error) {
+	conn := irbis.NewConnection()
+	conn.Host = "irbis"
+	conn.Port = 6666
+	conn.Workstation = irbis.ADMINISTRATOR
+	conn.Username = "avt"
+	conn.Password = "hedge"
+	conn.Database = base
+	if !conn.Connect() {
+		println("Не удалось подключиться для получения данных пользователя")
+		return 0, fmt.Errorf("{Error %v", "Не удалось подключиться к IRBIS")
+	}
+	defer conn.Disconnect()
+	based := conn.GetDatabaseInfo(base)
+	return based.MaxMfn, nil
+}
+
+func GenRecords(base, login, password string, start, end int) (string, error) {
+	conn := irbis.NewConnection()
+	conn.Host = "irbis"
+	conn.Port = 6666
+	conn.Username = login
+	conn.Password = password
+	conn.Database = base
+	if !conn.Connect() {
+		println("Не удалось подключиться для получения данных пользователя")
+		return "", fmt.Errorf("{Error %v", "Не удалось подключиться к IRBIS")
+	}
+	defer conn.Disconnect()
+
+	resSlice := models.Records{}
+
+	record := func(num int) models.Record {
+		r := conn.ReadRecord(num)
+		var booksCont = models.Record{
+			GUID:   r.FM(1119),
+			Author: r.FSM(700, 'A') + " " + r.FSM(700, 'B'),
+			Title:  r.FSM(200, 'A'),
+			Year:   r.FSM(210, 'D'),
+		}
+		return booksCont
+	}
+
+	for i := start; i <= end; i++ {
+		resSlice.Books = append(resSlice.Books, record(i))
+	}
+
+	jsonData, err := json.Marshal(resSlice)
+	if err != nil {
+		return "", fmt.Errorf("Ошибка упаковки json")
+	}
+
+	return string(jsonData), nil
+
 }
