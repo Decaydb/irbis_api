@@ -100,3 +100,7 @@ type Record struct {
 type Records struct {
 	Books []Record `json:"records"`
 }
+
+type MfnBlocks struct {
+	MFNs []int `json:"MFNs"`
+}

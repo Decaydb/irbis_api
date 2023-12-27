@@ -434,7 +434,9 @@ func GenRecords(base, login, password string, start, end int) (string, error) {
 		}
 		return booksCont
 	}
-
+	if start == 0 {
+		start = 1
+	}
 	for i := start; i <= end; i++ {
 		resSlice.Books = append(resSlice.Books, record(i))
 	}
@@ -446,4 +448,29 @@ func GenRecords(base, login, password string, start, end int) (string, error) {
 
 	return string(jsonData), nil
 
+}
+
+func FindBlock(base, login, password string) (string, error) {
+	conn := irbis.NewConnection()
+	conn.Host = "irbis"
+	conn.Port = 6666
+	conn.Username = login
+	conn.Password = password
+	conn.Database = base
+	if !conn.Connect() {
+		println("Не удалось подключиться для получения данных пользователя")
+		return "", fmt.Errorf("{Error %v", "Не удалось подключиться к IRBIS")
+	}
+	defer conn.Disconnect()
+
+	db := conn.GetDatabaseInfo(base)
+	dbBlocks := db.LockedRecords
+	group := models.MfnBlocks{
+		MFNs: dbBlocks,
+	}
+	jsonData, err := json.Marshal(group)
+	if err != nil {
+		return "", fmt.Errorf("Ошибка упаковки json")
+	}
+	return string(jsonData), nil
 }
