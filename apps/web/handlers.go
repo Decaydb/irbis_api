@@ -16,64 +16,37 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	//v := r.URL.Values()
 	//v.Add("last_name=")
 	w.Header().Set("Contetn-Type", "application/json")
-	var (
-		errType     = []int{0, 0, 0, 0} // Первый элемент - ошибка авторизации. Второй - неверные данные пользователя
-		description string
-		errd        error
-		errSend     int
-	)
 	q := r.URL.Query()
 	login := q.Get("login")
 	password := q.Get("password")
 	id := q.Get("id")
 	lastName := q.Get("last_name")
-	//var status string
-	if len(login) < 1 || len(password) < 1 {
-		//status = "Error"
-		errType[0] = 1
-	}
-	if len(id) == 0 || len(lastName) < 1 {
-		errType[1] = 1
-	}
 
-	if errType[0] == 0 && errType[1] == 0 {
-		description, errd = irb.UserProfile(login, password, id, lastName)
-		if errd != nil {
-			errType[2] = 1
-			log.Println(errd)
-		}
-	}
-
-	switch {
-	case errType[0] == 1:
-		if errType[1] == 1 {
-			errSend = 3
+	if len(login) > 2 && len(password) > 2 {
+		if len(id) > 1 && len(lastName) >= 2 {
+			description, errd := irb.UserProfile(login, password, id, lastName)
+			if errd == nil {
+				fmt.Fprint(w, description)
+			} else {
+				group := models.ErrorMessage{
+					Error: 1,
+				}
+				b, _ := json.Marshal(group)
+				fmt.Fprint(w, string(b))
+			}
 		} else {
-			errSend = 1
+			group := models.ErrorMessage{
+				Error: 2,
+			}
+			b, _ := json.Marshal(group)
+			fmt.Fprint(w, string(b))
 		}
-	case errType[0] == 0 && errType[1] == 1:
-		errSend = 3
-	case errType[0] == 0 && errType[1] == 0 && errType[2] == 1:
-		errSend = 4
-	}
-
-	if errSend == 0 {
-		// localhost:8080/api/v1/get.user?login=amogus&password=test1488&id=201240&last_name=Шамшурина
-		//Получение данных о пользователе.
-		//description, errd := irbis_hand.UserProfile(login, password, id, lastName)
-
-		fmt.Fprint(w, description)
-
 	} else {
 		group := models.ErrorMessage{
-			Error: errSend,
+			Error: 3,
 		}
-		b, err := json.Marshal(group)
-		if err != nil {
-			log.Println("error:", err)
-		}
+		b, _ := json.Marshal(group)
 		fmt.Fprint(w, string(b))
-
 	}
 
 }
@@ -267,7 +240,7 @@ func OnHandsDetail(w http.ResponseWriter, r *http.Request) {
 			resp, err := irb.IrbBooksDetail(login, password, id, lastName)
 			if err != nil {
 				group := models.ErrorMessage{
-					Error: 4,
+					Error: 3,
 				}
 				b, _ := json.Marshal(group)
 				fmt.Fprint(w, string(b))
@@ -277,11 +250,17 @@ func OnHandsDetail(w http.ResponseWriter, r *http.Request) {
 
 		} else {
 			group := models.ErrorMessage{
-				Error: 1,
+				Error: 2,
 			}
 			b, _ := json.Marshal(group)
 			fmt.Fprint(w, string(b))
 		}
+	} else {
+		group := models.ErrorMessage{
+			Error: 1,
+		}
+		b, _ := json.Marshal(group)
+		fmt.Fprint(w, string(b))
 	}
 }
 
@@ -304,7 +283,7 @@ func GuidSearch(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				println(err)
 				group := models.ErrorMessage{
-					Error: 4,
+					Error: 3,
 				}
 				b, _ := json.Marshal(group)
 				fmt.Fprint(w, string(b))
@@ -314,7 +293,7 @@ func GuidSearch(w http.ResponseWriter, r *http.Request) {
 
 		} else {
 			group := models.ErrorMessage{
-				Error: 3,
+				Error: 2,
 			}
 			b, _ := json.Marshal(group)
 			fmt.Fprint(w, string(b))
@@ -332,7 +311,7 @@ func GetRecords(w http.ResponseWriter, r *http.Request) {
 	page, err := strconv.Atoi(q.Get("page"))
 	if err != nil || len(base) == 0 {
 		group := models.ErrorMessage{
-			Error: 3,
+			Error: 1,
 		}
 		b, _ := json.Marshal(group)
 		fmt.Fprint(w, string(b))
@@ -362,7 +341,7 @@ func GetRecords(w http.ResponseWriter, r *http.Request) {
 
 		} else {
 			group := models.ErrorMessage{
-				Error: 4,
+				Error: 2,
 			}
 			b, _ := json.Marshal(group)
 			fmt.Fprint(w, string(b))
@@ -397,6 +376,32 @@ func MfnBlocks(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func MfnsUnblock(w http.ResponseWriter, r *http.Request) {
-
+func UnblockRecs(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	login := q.Get("login")
+	password := q.Get("password")
+	base := q.Get("base")
+	mfn := q.Get("mfn")
+	if len(login) > 2 && len(password) > 2 && len(mfn) != 0 {
+		err := irb.UnlockMfns(base, mfn, login, password)
+		if err != nil {
+			group := models.ErrorMessage{
+				Error: 4,
+			}
+			b, _ := json.Marshal(group)
+			fmt.Fprint(w, string(b))
+		} else {
+			group := models.ErrorMessage{
+				Error: 0,
+			}
+			b, _ := json.Marshal(group)
+			fmt.Fprint(w, string(b))
+		}
+	} else {
+		group := models.ErrorMessage{
+			Error: 1,
+		}
+		b, _ := json.Marshal(group)
+		fmt.Fprint(w, string(b))
+	}
 }

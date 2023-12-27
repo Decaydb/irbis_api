@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"irbis_api/internal/models"
 	"log"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -473,4 +474,39 @@ func FindBlock(base, login, password string) (string, error) {
 		return "", fmt.Errorf("Ошибка упаковки json")
 	}
 	return string(jsonData), nil
+}
+
+func UnlockMfns(mfn, base, login, password string) error {
+	conn := irbis.NewConnection()
+	conn.Host = "irbis"
+	conn.Port = 6666
+	conn.Username = login
+	conn.Password = password
+	conn.Database = base
+	if !conn.Connect() {
+		println("Не удалось подключиться для получения данных пользователя")
+		return fmt.Errorf("{Error %v", "Не удалось подключиться к IRBIS")
+	}
+	defer conn.Disconnect()
+	mfnList := []int{}
+	if strings.Contains(mfn, ",") {
+		strMfn := strings.Split(mfn, ",")
+		for _, num := range strMfn {
+			MfnInt, err := strconv.Atoi(num)
+			if err != nil {
+				return fmt.Errorf("В список MFN для разблокировки передано не число")
+			}
+			mfnList = append(mfnList, MfnInt)
+		}
+	} else {
+		a, err := strconv.Atoi(mfn)
+		if err != nil {
+			return fmt.Errorf("В качестве номера MFN передано не число")
+		}
+		mfnList = append(mfnList, a)
+	}
+	conn.UnlockRecords(base, mfnList)
+
+	return nil
+
 }
