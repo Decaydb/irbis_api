@@ -1,5 +1,7 @@
 package models
 
+import "github.com/amironov73/GoIrbis/src/irbis"
+
 type VirtualUserData struct {
 	Name      string
 	Surname   string
@@ -103,4 +105,18 @@ type Records struct {
 
 type MfnBlocks struct {
 	MFNs []int `json:"MFNs"`
+}
+
+type GCor struct {
+	Login    string
+	Password string
+	Base     string
+	Gtype    string
+	Value    string
+	Field    string
+	Actual   string
+}
+
+type GblState struct {
+	Task []irbis.GblStatement
 }

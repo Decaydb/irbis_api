@@ -405,3 +405,31 @@ func UnblockRecs(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, string(b))
 	}
 }
+
+func GlobalCorrect(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+
+	gbl := models.GCor{
+		Login:    q.Get("login"),
+		Password: q.Get("password"),
+		Base:     q.Get("base"),
+		Gtype:    q.Get("type"),
+		Field:    q.Get("field"),
+		Value:    q.Get("value"),
+	}
+	if len(gbl.Value) == 0 {
+		gbl.Value = "empty"
+	}
+	if len(gbl.Login) > 1 && len(gbl.Password) > 1 {
+		if len(gbl.Gtype) > 2 && len(gbl.Field) != 0 && len(gbl.Value) != 0 {
+			err := irb.Gbl(&gbl)
+			if err != nil {
+				//Обработка ошибки ирбиса
+			}
+		} else {
+			//Ошибка - передаваемые значения некорректны
+		}
+	} else {
+		//Ошибка - пустые логин и пароль
+	}
+}

@@ -510,3 +510,18 @@ func UnlockMfns(mfn, base, login, password string) error {
 	return nil
 
 }
+
+func Gbl(gbl *models.GCor) error {
+	conn := irbis.NewConnection()
+	conn.Host = "irbis"
+	conn.Port = 6666
+	conn.Username = gbl.Login
+	conn.Password = gbl.Password
+	conn.Database = gbl.Base
+	if !conn.Connect() {
+		println("Не удалось подключиться для получения данных пользователя")
+		return fmt.Errorf("{Error %v", "Не удалось подключиться к IRBIS")
+	}
+	defer conn.Disconnect()
+
+}

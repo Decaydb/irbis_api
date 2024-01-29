@@ -1,1 +1,5 @@
-"# irbis_api" 
+IRBIS API
+
+API для работы с АБИС ИРБИС
+
+  

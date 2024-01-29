@@ -19,6 +19,7 @@ func Routing() {
 	mux.HandleFunc("/api/v1/records", GetRecords)
 	mux.HandleFunc("/api/v1/blocks", MfnBlocks)
 	mux.HandleFunc("/api/v1/records.unlock", UnblockRecs)
+	mux.HandleFunc("/api/v1/gbl", GlobalCorrect)
 
 	f, err := os.OpenFile("logs/web.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
