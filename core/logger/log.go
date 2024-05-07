@@ -1,21 +1,38 @@
 package logger
 
 import (
-	"fmt"
 	"log"
 	"os"
-	"strings"
-	"time"
 )
 
-func Write(errType string, errBody error) {
-	file, err := os.OpenFile("logs/"+errType+"Errors.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+func Info(content ...any) {
+
+	f, err := os.OpenFile("logs/web.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		log.Println("Запись логов невозможна!")
+		log.Println(err)
 	}
-	defer file.Close()
-	time := time.Now()
-	file.WriteString(fmt.Sprintf("%v", errBody) + "\n")
-	logger := log.New(file, fmt.Sprintf("ERROR|%s;%s", strings.ToUpper(errType), time.Format("2006-01-02 15:04:05")), log.LstdFlags)
-	logger.Println(err)
+	defer f.Close()
+
+	infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime|log.Llongfile)
+	infoLog.Println(content...)
+}
+
+func Error(content ...any) {
+	f, err := os.OpenFile("logs/web.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	errorLog := log.New(f, "ERROR\t", log.Ldate|log.Ltime|log.Llongfile)
+	errorLog.Println(content...)
+}
+
+func Fatal(content ...any) {
+	f, err := os.OpenFile("logs/web.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	errorLog := log.New(f, "FATAL ERROR\t", log.Ldate|log.Ltime|log.Llongfile)
+	errorLog.Fatal(content...)
 }
