@@ -111,12 +111,22 @@ type GCor struct {
 	Login    string
 	Password string
 	Base     string
+	Records  string
+	Params   Gpar
 	Gtype    string
 	Value    string
 	Field    string
 	Actual   string
 }
+type Gpar struct {
+	Command     string
+	Field       string
+	Repeat      string
+	Replace     string
+	Replacement string
+}
 
 type GblState struct {
 	Task []irbis.GblStatement
 }
+

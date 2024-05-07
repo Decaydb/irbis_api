@@ -13,6 +13,19 @@ import (
 	"github.com/amironov73/GoIrbis/src/irbis"
 )
 
+/*
+	func conndb(data irbis.Connection) (*irbis.Connection, bool) {
+		conn := irbis.NewConnection()
+		conn.Host = data.Host
+		conn.Port = data.Port
+		conn.Username = data.Username
+		conn.Password = data.Password
+		conn.Database = data.Database
+		conn.Workstation = data.Workstation
+
+		return conn, conn.Connected
+	}
+*/
 func UserBooksOnHands(login, password, user_id, last_name string) (string, error) {
 	conn := irbis.NewConnection()
 	conn.Host = "irbis"
@@ -410,6 +423,7 @@ func SoloMfn(base, login, password string) (int, error) {
 	return based.MaxMfn, nil
 }
 
+// Функция которая обрабатывает каждую запись форматируя на лету, внутри анонимной функции
 func GenRecords(base, login, password string, start, end int) (string, error) {
 	conn := irbis.NewConnection()
 	conn.Host = "irbis"
@@ -449,6 +463,30 @@ func GenRecords(base, login, password string, start, end int) (string, error) {
 
 	return string(jsonData), nil
 
+}
+
+// Функция для вывода краткого описания записей используя особый формат, который выводит данные сразу в json.
+func CollectRecords(base, login, password string, start, end int) (string, error) {
+	conn := irbis.NewConnection()
+	conn.Host = "irbis"
+	conn.Port = 6666
+	conn.Username = login
+	conn.Password = password
+	conn.Database = base
+	if !conn.Connect() {
+		println("Не удалось подключиться для получения данных пользователя")
+		return "", fmt.Errorf("{Error %v", "Не удалось подключиться к IRBIS")
+	}
+	defer conn.Disconnect()
+
+	mfns := []int{}
+	for i := start; i < end; i++ {
+		mfns = append(mfns, i)
+	}
+	format := "@jsonmain"
+
+	records := conn.FormatRecords(format, mfns)
+	return "[" + strings.Join(records, ",") + "]", nil
 }
 
 func FindBlock(base, login, password string) (string, error) {
@@ -523,5 +561,31 @@ func Gbl(gbl *models.GCor) error {
 		return fmt.Errorf("{Error %v", "Не удалось подключиться к IRBIS")
 	}
 	defer conn.Disconnect()
+	var actual bool
 
+	if gbl.Actual == "true" || gbl.Actual == "yes" || gbl.Actual == "да" {
+		actual = true
+	}
+
+	strSl := strings.Split(strings.ReplaceAll(gbl.Records, " ", ""), ",")
+	var intSl []int
+	for _, e := range strSl {
+		magic, err := strconv.Atoi(e)
+		if err == nil {
+			intSl = append(intSl, magic)
+		}
+	}
+	settings := new(irbis.GblSettings)
+	settings.Database = gbl.Base
+	settings.Actualize = actual
+	settings.MfnList = intSl
+	settings.Statements = []irbis.GblStatement{
+		{Command: gbl.Params.Command, Parameter1: gbl.Params.Field, Parameter2: gbl.Params.Repeat, Format1: gbl.Params.Replace, Format2: gbl.Params.Replacement},
+	}
+	result := conn.GlobalCorrection(settings)
+	for line := range result {
+		println(line)
+	}
+
+	return nil
 }
