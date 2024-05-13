@@ -406,6 +406,22 @@ func GuidSearchRecord(login, password, guid string) (string, error) {
 	return string(jsonData), nil
 }
 
+func MfnSearchRecord(login, password, base string, mfn int) (string, error) {
+	conn := irbis.NewConnection()
+	conn.Host = "irbis"
+	conn.Port = 6666
+	conn.Username = login
+	conn.Password = password
+	conn.Database = base
+
+	record := conn.FormatRecords("@jsonmain", []int{mfn})
+	if len(record[0]) < 3 {
+		return "ошибка", fmt.Errorf("%s", record[0])
+	}
+	return record[0], nil
+
+}
+
 func SoloMfn(base, login, password string) (int, error) {
 	conn := irbis.NewConnection()
 	conn.Host = "irbis"
@@ -479,8 +495,17 @@ func CollectRecords(base, login, password string, start, end int) (string, error
 	}
 	defer conn.Disconnect()
 
+	totalRec, err := SoloMfn(base, login, password)
+	log.Println(totalRec)
+	if err != nil {
+		log.Println("Ошибка получения максимального количества записей в базе.")
+	}
+	if end > totalRec {
+		end = totalRec - 1
+	}
+
 	mfns := []int{}
-	for i := start; i < end; i++ {
+	for i := start; i <= end; i++ {
 		mfns = append(mfns, i)
 	}
 	format := "@jsonmain"

@@ -306,41 +306,53 @@ func GuidSearch(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func FormRecords(w http.ResponseWriter, r *http.Request) {
+func MfnSearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	login := q.Get("login")
 	password := q.Get("password")
 	base := q.Get("base")
-	pageStr := q.Get("page")
-
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || len(base) == 0 {
+	mfn := q.Get("mfn")
+	if inmfn, err := strconv.Atoi(mfn); err != nil || len(mfn) < 1 {
 		group := models.ErrorMessage{
 			Error: 1,
 		}
 		b, _ := json.Marshal(group)
 		fmt.Fprint(w, string(b))
 	} else {
-
-		totalRec, err := irb.SoloMfn(base, login, password)
+		result, err := irb.MfnSearchRecord(login, password, base, inmfn)
 		if err != nil {
-			log.Println("Ошибка получения максимального количества записей в базе.")
+			group := models.ErrorMessage{
+				Error: 2,
+			}
+			b, _ := json.Marshal(group)
+			fmt.Fprint(w, string(b))
+		} else {
+			fmt.Fprint(w, result)
 		}
-		recPerPage := 25
-		totalPages := (totalRec + recPerPage - 1) / recPerPage
-		if page < 1 {
-			page = 1
-		} else if page > totalPages {
-			page = totalPages
-		}
+	}
+}
 
-		start := (page - 1) * recPerPage
-		end := start + recPerPage
-		if end > totalRec {
-			end = totalRec
-		}
-		start++
+// Получает максимальный mfn и вычисляет какие записи нужно выделить на страницу.
+func FormRecords(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	login := q.Get("login")
+	password := q.Get("password")
+	base := q.Get("base")
+	mfnStart := q.Get("start")
+	mfnEnd := q.Get("end")
 
+	start, errs := strconv.Atoi(mfnStart)
+	end, erre := strconv.Atoi(mfnEnd)
+	if errs != nil || erre != nil {
+		group := models.ErrorMessage{
+			Error: 1,
+		}
+		b, _ := json.Marshal(group)
+		fmt.Fprint(w, string(b))
+	} else {
+		if len(base) < 1 {
+			base = "IKNBU"
+		}
 		records, err := irb.CollectRecords(base, login, password, start, end)
 		if err == nil {
 			fmt.Fprint(w, records)
