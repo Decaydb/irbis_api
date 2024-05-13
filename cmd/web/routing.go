@@ -17,7 +17,7 @@ func Routing() {
 	mux.HandleFunc("/api/v1/on.hands.detail", OnHandsDetail)
 	mux.HandleFunc("/api/v1/guid.search", GuidSearch)
 	mux.HandleFunc("/api/v1/records", GetRecords)
-	mux.HandleFunc("/api/v1/get.recs", FormRecords)
+	mux.HandleFunc("/api/v1/frecords", FormRecords)
 	mux.HandleFunc("/api/v1/blocks", MfnBlocks)
 	mux.HandleFunc("/api/v1/records.unlock", UnblockRecs)
 	mux.HandleFunc("/api/v1/gbl", GlobalCorrect)

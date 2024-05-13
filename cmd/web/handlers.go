@@ -16,8 +16,6 @@ import (
 var cache *caching.Cache
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
-	//v := r.URL.Values()
-	//v.Add("last_name=")
 	w.Header().Set("Contetn-Type", "application/json")
 	q := r.URL.Query()
 	login := q.Get("login")
@@ -323,12 +321,12 @@ func FormRecords(w http.ResponseWriter, r *http.Request) {
 		b, _ := json.Marshal(group)
 		fmt.Fprint(w, string(b))
 	} else {
+
 		totalRec, err := irb.SoloMfn(base, login, password)
-		log.Println(totalRec)
 		if err != nil {
 			log.Println("Ошибка получения максимального количества записей в базе.")
 		}
-		recPerPage := 30
+		recPerPage := 25
 		totalPages := (totalRec + recPerPage - 1) / recPerPage
 		if page < 1 {
 			page = 1
@@ -342,7 +340,6 @@ func FormRecords(w http.ResponseWriter, r *http.Request) {
 			end = totalRec
 		}
 		start++
-		end--
 
 		records, err := irb.CollectRecords(base, login, password, start, end)
 		if err == nil {
